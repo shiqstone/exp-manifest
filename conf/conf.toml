@@ -1,0 +1,3 @@
+path = "./data/bill.txt"
+unit = ["斤","包","袋","个","盒","瓶","桶","箱","板","排"]
+output_path = "./data/"

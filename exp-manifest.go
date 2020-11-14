@@ -13,14 +13,14 @@ import (
 	"time"
 
 	"github.com/360EntSecGroup-Skylar/excelize"
-	// "github.com/BurntSushi/toml"
+	"github.com/BurntSushi/toml"
 )
 
-// type Config struct {
-// 	Unit []string `toml:"unit"`
-// 	Path string  `toml:"path"`
-// 	OutputPath string `toml:"output_path"`
-// }
+type Config struct {
+	Unit []string `toml:"unit"`
+	Path string  `toml:"path"`
+	OutputPath string `toml:"output_path"`
+}
 
 type Item struct {
 	Name string
@@ -32,23 +32,21 @@ type Item struct {
 }
 
 func main() {
-	path := flag.String("p", "./bill.txt", "path of bill path")
-	outpath := flag.String("o", "./", "path of export excel path")
-	// configFile := flag.String("c", "./conf/conf.toml", "config file")
+	path := flag.String("p", "", "path of uno list path")
+	configFile := flag.String("c", "./conf/conf.toml", "config file")
 	title := flag.String("t", "", "title of export excel name")
 	flag.Parse()
 
-	var err error
-	// conf := new(Config)
-	// _, err := toml.DecodeFile(*configFile, conf)
-	// if err != nil {
-	// 	log.Println("failed to decode config file", configFile, err)
-	// 	return
-	// }
+	conf := new(Config)
+	_, err := toml.DecodeFile(*configFile, conf)
+	if err != nil {
+		log.Println("failed to decode config file", configFile, err)
+		return
+	}
 
-	// if *path == "" {
-	// 	*path = conf.Path
-	// }
+	if *path == "" {
+		*path = conf.Path
+	}
 
 	data := make([]*Item, 0)
 	odstr := ReadFile(*path)
@@ -64,6 +62,7 @@ func main() {
 	lines := strings.Split(odstr, "元")
 	log.Println(lines)
 	re := regexp.MustCompile("([\u4e00-\u9fa5]+)([\\d]+)([\u4e00-\u9fa5]+)([\\d]+\\.?[\\d]?)")
+	// re := regexp.MustCompile("(.+)([\\d]+)(斤|包|袋|个|盒|瓶|桶|箱|板|排)([\\d]+\\.?[\\d]?)")
 	for _, line := range lines {
 		if len(line) == 0 {
 			continue
@@ -76,7 +75,7 @@ func main() {
 		item.Name = params[1]
 		item.Unit = params[3]
 		item.Quantity, _ = strconv.Atoi(params[2])
-		item.Price, _ = strconv.ParseFloat(params[4], 32/64)
+		item.Price, err = strconv.ParseFloat(params[4], 32/64)
 		item.Total = item.Price * float64(item.Quantity)
 		data = append(data, item)
 	}
@@ -128,10 +127,7 @@ func main() {
 	} else {
 		fname = *title
 	}
-	// if *outpath == "" {
-	// 	*outpath = conf.OutputPath
-	// }
-	expName := *outpath + fname
+	expName := conf.OutputPath + fname
 	err = f.SaveAs(expName)
     if err != nil {
         log.Println(err)
